@@ -5,6 +5,11 @@ using UnityEngine.Rendering;
 public class CustomRenderPipeline : RenderPipeline
 {
     private CameraRenderer renderer;
+    public CustomRenderPipeline()
+    {
+        // SRP 并没有减少Draw Call, 而是优化渲染序列
+        GraphicsSettings.useScriptableRenderPipelineBatching = false;
+    }
     /// <summary>
     /// 渲染方法, Unity在每一帧调用调用这个方法进行渲染
     /// </summary>
