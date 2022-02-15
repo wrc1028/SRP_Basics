@@ -21,13 +21,14 @@ partial class CameraRenderer
     };
     // 剔除结果
     private CullingResults cullingResults;
-    // 无光Shader的ID
+    // Shader Tag 对应的ShaderID
     private static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    private static ShaderTagId litShaderTagId = new ShaderTagId("CustomLit");
 
     // --------------------------------------------------------------------------------------- 
 
     // 绘制相机所能看见的所有几何图形
-    public void Render(ScriptableRenderContext context, Camera camera)
+    public void Render(ScriptableRenderContext context, Camera camera, bool useDynamicBatching, bool useGPUInstancing)
     {
         this.context = context;
         this.camera = camera;
@@ -37,7 +38,7 @@ partial class CameraRenderer
         if (!Cull()) return;
 
         Step();
-        DrawVisibleGeometry();
+        DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
         Submit();
@@ -59,7 +60,7 @@ partial class CameraRenderer
     {
         context.SetupCameraProperties(camera);
         
-        // 清理标志: 渲染前清除缓存的方式
+        // 清理标志: 清除上一帧那几样缓存信息
         CameraClearFlags flags = camera.clearFlags;
         buffer.ClearRenderTarget(
             flags <= CameraClearFlags.Depth, 
@@ -70,7 +71,7 @@ partial class CameraRenderer
         ExecuteBuffer();
     }
     // 
-    private void DrawVisibleGeometry()
+    private void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
     {
         // --------------------绘制不透明物体--------------------
         // ?排序设置: 用于对场景中物体渲染顺序进行排序(使用距离排序还是 正交排序?)
@@ -80,7 +81,13 @@ partial class CameraRenderer
             criteria = SortingCriteria.CommonOpaque,
         };
         // ?绘制参数设置: 如何对物体进行绘制, 是否开启合批处理
-        DrawingSettings drawingSettings = new DrawingSettings(unlitShaderTagId, sortingSettings);
+        // SetShaderPassName 指将带有该标签的Shader参与渲染
+        DrawingSettings drawingSettings = new DrawingSettings(unlitShaderTagId, sortingSettings)
+        {
+            enableDynamicBatching = useDynamicBatching,
+            enableInstancing = useGPUInstancing,
+        };
+        drawingSettings.SetShaderPassName(1, litShaderTagId);
         // ?渲染物体筛选: 通过筛选(着色器设置?)对渲染物体进行选择性渲染
         FilteringSettings filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
         // 最后将需要渲染的物体及其参数传给当前的渲染Buffer
@@ -100,7 +107,7 @@ partial class CameraRenderer
     {
         buffer.EndSample(SampleName);
         ExecuteBuffer();
-
+        // 提交渲染
         context.Submit();
     }
     // 

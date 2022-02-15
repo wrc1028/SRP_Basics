@@ -47,6 +47,7 @@ partial class CameraRenderer
     // 绘制当前管线不支持的Shader
     partial void DrawUnsupportedShaders()
     {
+        // TODO: 在这里加入OverDraw的Shader, 让其取代进行渲染. 如何取代?
         if (errorMaterial == null) errorMaterial = new Material(Shader.Find("Hidden/InternalErrorShader"));
         DrawingSettings drawingSettings = new DrawingSettings(legacyShaderTagIds[0], new SortingSettings(camera))
         {

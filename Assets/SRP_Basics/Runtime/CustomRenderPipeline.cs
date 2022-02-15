@@ -5,10 +5,15 @@ using UnityEngine.Rendering;
 public class CustomRenderPipeline : RenderPipeline
 {
     private CameraRenderer renderer;
-    public CustomRenderPipeline()
+    private bool useDynamicBatching, useGPUInstancing;
+    public CustomRenderPipeline(bool useSRPBatching, bool useDynamicBatching, bool useGPUInstancing)
     {
         // SRP 并没有减少Draw Call, 而是优化渲染序列
-        GraphicsSettings.useScriptableRenderPipelineBatching = false;
+        // 优先级 SRP Batch > GPUInstancing
+
+        GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatching;
+        this.useDynamicBatching = useDynamicBatching;
+        this.useGPUInstancing = useGPUInstancing;
     }
     /// <summary>
     /// 渲染方法, Unity在每一帧调用调用这个方法进行渲染
@@ -20,7 +25,7 @@ public class CustomRenderPipeline : RenderPipeline
         renderer = new CameraRenderer();
         foreach (Camera camera in cameras)
         {
-            renderer.Render(context, camera);
+            renderer.Render(context, camera, useDynamicBatching, useGPUInstancing);
         }
     }
 }
