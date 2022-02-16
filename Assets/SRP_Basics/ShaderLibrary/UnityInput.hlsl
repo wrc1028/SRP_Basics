@@ -7,6 +7,7 @@ CBUFFER_START(UnityPerDraw)
 	float4 unity_LODFade;
     float4x4 unity_WorldToObject;
     real4 unity_WorldTransformParams;
+    float3 _WorldSpaceCameraPos;
 CBUFFER_END
 
 float4x4 unity_MatrixV;

@@ -12,6 +12,7 @@ public class CustomRenderPipeline : RenderPipeline
         // 优先级 SRP Batch > GPUInstancing
 
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatching;
+        GraphicsSettings.lightsUseLinearIntensity = true;
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUInstancing = useGPUInstancing;
     }

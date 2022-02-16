@@ -24,6 +24,8 @@ partial class CameraRenderer
     // Shader Tag 对应的ShaderID
     private static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
     private static ShaderTagId litShaderTagId = new ShaderTagId("CustomLit");
+    // 光源信息
+    private Lighting lighting = new Lighting();
 
     // --------------------------------------------------------------------------------------- 
 
@@ -38,6 +40,7 @@ partial class CameraRenderer
         if (!Cull()) return;
 
         Step();
+        lighting.Setup(context, cullingResults);
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
@@ -58,15 +61,17 @@ partial class CameraRenderer
     // 设置渲染参数
     private void Step()
     {
+        // 设置相机的参数: 相机矩阵、位置信息等等
         context.SetupCameraProperties(camera);
         
-        // 清理标志: 清除上一帧那几样缓存信息
+        // 如何清理上一帧渲染结果(Buffer)的方式, 当前参数设置的不太准确
         CameraClearFlags flags = camera.clearFlags;
         buffer.ClearRenderTarget(
             flags <= CameraClearFlags.Depth, 
             flags == CameraClearFlags.Color, 
             Color.clear
         );
+        // ?
         buffer.BeginSample(SampleName);
         ExecuteBuffer();
     }

@@ -23,6 +23,7 @@ Shader "Custom RP/Unlit"
             ZWrite [_ZWrite]
 
             HLSLPROGRAM
+            #pragma target 3.5
             #pragma multi_compile_instancing
             #pragma vertex UnlitVertex
             #pragma fragment UnlitFragment
