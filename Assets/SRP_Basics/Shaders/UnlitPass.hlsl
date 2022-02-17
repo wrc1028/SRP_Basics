@@ -51,7 +51,7 @@ float4 UnlitFragment(Varyings input) : SV_TARGET
     float4 finalColor = mainTex * mainColor;
     float alphaCutValue = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff);
     #ifdef _CLIPPING 
-        clip(finalColor.r - alphaCutValue);
+        clip(finalColor.a - alphaCutValue);
     #endif
     return finalColor;
 }

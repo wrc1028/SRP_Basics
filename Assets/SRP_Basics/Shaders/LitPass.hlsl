@@ -13,6 +13,7 @@ SAMPLER(sampler_MainTex);
 UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
     UNITY_DEFINE_INSTANCED_PROP(float4, _MainTex_ST)
     UNITY_DEFINE_INSTANCED_PROP(float4, _MainColor)
+    UNITY_DEFINE_INSTANCED_PROP(float, _ClipValue)
     UNITY_DEFINE_INSTANCED_PROP(float, _Metallic)
     UNITY_DEFINE_INSTANCED_PROP(float, _Smoothness)
 UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
@@ -45,10 +46,10 @@ Veryings LitVertex (Attributes input)
 
     output.positionCS = TransformObjectToHClip(input.positionOS);
     output.positionWS = TransformObjectToWorld(input.positionOS);
+    output.normalWS = TransformObjectToWorldNormal(input.normalOS, true); // 推导为啥要右称变换的逆矩阵
     // UnityPerMaterial: 为ConstantBuffer中的元素, 可以理解为当前Shader中Properties中的所有属性
     float4 tilingAndOffset = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _MainTex_ST);
     output.uv = input.texcoord * tilingAndOffset.xy + tilingAndOffset.zw;
-    output.normalWS = TransformObjectToWorldNormal(input.normalOS, true); // 推导为啥要右称变换的逆矩阵
     return output;
 }
 
@@ -66,8 +67,16 @@ float4 LitFragment (Veryings input) : SV_TARGET
     surface.alpha = baseColor.a;
     surface.metallic = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Metallic);
     surface.smoothness = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Smoothness);
+    
+    #ifdef _PREMULTIPLY_ALPHA
+        BRDF brdf = GetBRDF(surface, true);
+    #else
+        BRDF brdf = GetBRDF(surface, false);
+    #endif
 
-    BRDF brdf = GetBRDF(surface);
+    #ifdef _CLIPPING
+        clip(surface.alpha - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _ClipValue));
+    #endif
 
     return float4(GetLighting(surface, brdf), surface.alpha);
 }

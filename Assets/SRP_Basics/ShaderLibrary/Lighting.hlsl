@@ -4,7 +4,7 @@
 float3 CalculateLight(Surface surface, BRDF brdf, Light light)
 {
     float NdotL = saturate(dot(surface.normal, light.direction));
-    return NdotL * light.color * brdf.diffuse;
+    return NdotL * light.color * DirectBRDF(surface, brdf, light);
 }
 
 float3 GetLighting(Surface surface, BRDF brdf)

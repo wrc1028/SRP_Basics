@@ -60,7 +60,7 @@ Material:
     - _Clipping: 0
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
-    - _DstBlend: 6
+    - _DstBlend: 10
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
@@ -77,6 +77,6 @@ Material:
     - _BaseColor: {r: 0, g: 0.2170933, b: 0.9339623, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _MainColor: {r: 0.19383301, g: 0.04277316, b: 0.8396226, a: 1}
+    - _MainColor: {r: 0.11092911, g: 0.30088535, b: 0.7169812, a: 0.27058825}
     - _MianColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

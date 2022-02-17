@@ -64,16 +64,15 @@ partial class CameraRenderer
         // 设置相机的参数: 相机矩阵、位置信息等等
         context.SetupCameraProperties(camera);
         
-        // 如何清理上一帧渲染结果(Buffer)的方式, 当前参数设置的不太准确
+        // 清理上一帧渲染结果(Buffer)的方式, 当前参数设置的不太准确
         CameraClearFlags flags = camera.clearFlags;
         buffer.ClearRenderTarget(
             flags <= CameraClearFlags.Depth, 
             flags == CameraClearFlags.Color, 
             Color.clear
         );
-        // ?
         buffer.BeginSample(SampleName);
-        ExecuteBuffer();
+        ExecuteBuffer(); // 第一次执行CommandBuffer中的命令:清理上一帧的渲染结果、开始记录采样过程, 然后清除这些命令
     }
     // 
     private void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
@@ -111,7 +110,7 @@ partial class CameraRenderer
     private void Submit()
     {
         buffer.EndSample(SampleName);
-        ExecuteBuffer();
+        ExecuteBuffer(); // 第二次执行CommandBuffer中的命令:结束记录采样过程, 然后清除这个命令
         // 提交渲染
         context.Submit();
     }
