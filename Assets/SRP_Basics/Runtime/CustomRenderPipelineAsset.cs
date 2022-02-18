@@ -6,8 +6,9 @@ using UnityEngine.Rendering;
 public class CustomRenderPipelineAsset : RenderPipelineAsset
 {
     public bool useSRPBatching, useDynamicBatching, useGPUInstancing;
+    public ShadowSettings shadows = default;
     protected override RenderPipeline CreatePipeline()
     {
-        return new CustomRenderPipeline(useSRPBatching, useDynamicBatching, useGPUInstancing);
+        return new CustomRenderPipeline(useSRPBatching, useDynamicBatching, useGPUInstancing, shadows);
     }
 }

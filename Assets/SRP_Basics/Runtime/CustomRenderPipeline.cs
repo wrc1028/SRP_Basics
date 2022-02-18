@@ -6,7 +6,8 @@ public class CustomRenderPipeline : RenderPipeline
 {
     private CameraRenderer renderer;
     private bool useDynamicBatching, useGPUInstancing;
-    public CustomRenderPipeline(bool useSRPBatching, bool useDynamicBatching, bool useGPUInstancing)
+    private ShadowSettings shadowSettings;
+    public CustomRenderPipeline(bool useSRPBatching, bool useDynamicBatching, bool useGPUInstancing, ShadowSettings shadowSettings)
     {
         // SRP 并没有减少Draw Call, 而是优化渲染序列
         // 优先级 SRP Batch > GPUInstancing
@@ -15,6 +16,7 @@ public class CustomRenderPipeline : RenderPipeline
         GraphicsSettings.lightsUseLinearIntensity = true;
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUInstancing = useGPUInstancing;
+        this.shadowSettings = shadowSettings;
     }
     /// <summary>
     /// 渲染方法, Unity在每一帧调用调用这个方法进行渲染
@@ -26,7 +28,7 @@ public class CustomRenderPipeline : RenderPipeline
         renderer = new CameraRenderer();
         foreach (Camera camera in cameras)
         {
-            renderer.Render(context, camera, useDynamicBatching, useGPUInstancing);
+            renderer.Render(context, camera, useDynamicBatching, useGPUInstancing, shadowSettings);
         }
     }
 }

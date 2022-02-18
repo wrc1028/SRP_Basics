@@ -30,29 +30,38 @@ partial class CameraRenderer
     // --------------------------------------------------------------------------------------- 
 
     // 绘制相机所能看见的所有几何图形
-    public void Render(ScriptableRenderContext context, Camera camera, bool useDynamicBatching, bool useGPUInstancing)
+    public void Render(ScriptableRenderContext context, Camera camera, bool useDynamicBatching, bool useGPUInstancing, ShadowSettings shadowSettings)
     {
         this.context = context;
         this.camera = camera;
 
         PrepareBuffer();
         PrepareForSceneWindow();
-        if (!Cull()) return;
-
+        if (!Cull(shadowSettings.maxDistance)) return;
+        // Step(); 渲染阴影时因为更改了渲染目标, 因此先将ShadowMap的渲染提到设置相机参数之前(context.SetupCameraProperties(camera))
+        buffer.BeginSample(SampleName);
+        ExecuteBuffer();
+        lighting.Setup(context, cullingResults, shadowSettings);
+        buffer.EndSample(SampleName);
+        ExecuteBuffer();
+        
         Step();
-        lighting.Setup(context, cullingResults);
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
+        lighting.Cleanup();
         Submit();
     }
     // 剔除
-    private bool Cull()
+    private bool Cull(float maxShadowDistance)
     {
         ScriptableCullingParameters parameters;
         // 尝试获得摄像机的剔除所需要的参数，比如相机的位置、近裁面和远裁面、可见层设置等等
         if (camera.TryGetCullingParameters(out parameters))
         {
+            // 生成两份结果, 一份用于相机计算, 一份用于计算光照贴图????
+            // 设置相机能看见Shadow的最大距离, 得到用于生成光照贴图的剔除结果
+            parameters.shadowDistance = Mathf.Min(camera.farClipPlane, maxShadowDistance);
             cullingResults = context.Cull(ref parameters);
             return true;
         }
@@ -61,7 +70,7 @@ partial class CameraRenderer
     // 设置渲染参数
     private void Step()
     {
-        // 设置相机的参数: 相机矩阵、位置信息等等
+        // 设置相机的参数: 相机矩阵、位置信息等等, (设置渲染目标??)
         context.SetupCameraProperties(camera);
         
         // 清理上一帧渲染结果(Buffer)的方式, 当前参数设置的不太准确
@@ -72,7 +81,7 @@ partial class CameraRenderer
             Color.clear
         );
         buffer.BeginSample(SampleName);
-        ExecuteBuffer(); // 第一次执行CommandBuffer中的命令:清理上一帧的渲染结果、开始记录采样过程, 然后清除这些命令
+        ExecuteBuffer(); // 第一次执行CommandBuffer中的命令: 以指定方式清理上一帧的渲染结果、开始记录渲染过程
     }
     // 
     private void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing)
@@ -110,11 +119,11 @@ partial class CameraRenderer
     private void Submit()
     {
         buffer.EndSample(SampleName);
-        ExecuteBuffer(); // 第二次执行CommandBuffer中的命令:结束记录采样过程, 然后清除这个命令
+        ExecuteBuffer(); // 第二次执行CommandBuffer中的命令: 结束记录渲染过程
         // 提交渲染
         context.Submit();
     }
-    // 
+    // 执行CommandBuffer中的渲染命令
     private void ExecuteBuffer()
     {
         context.ExecuteCommandBuffer(buffer);

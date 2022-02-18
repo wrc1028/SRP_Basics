@@ -9,7 +9,7 @@ Shader "Custom RP/Lit"
         
         [Toggle(_PREMULTIPLY_ALPHA)] _PremulAlpha ("Premul Alpha", float) = 0
 
-        [Toggle(_CLIPPING)] _Clipping ("Clipping", float) = 0
+        [Toggle(_CLIPPING)] _Clipping ("Clipping", float) = 0.5
         _ClipValue ("Clip Value", Range(0, 1)) = 0
 
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
@@ -33,9 +33,27 @@ Shader "Custom RP/Lit"
             #pragma instancing_options assumeuniformscaling
             #pragma vertex LitVertex
             #pragma fragment LitFragment
+
             #pragma shader_feature _CLIPPING
             #pragma shader_feature _PREMULTIPLY_ALPHA
             #include "LitPass.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Tags { "LightMode" = "ShadowCaster" }
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma vertex ShadowCasterVertex
+            #pragma fragment ShadowCasterFragment
+
+            #pragma shader_feature _CLIPPING
+            #include "ShadowCasterPass.hlsl"
             ENDHLSL
         }
     }
