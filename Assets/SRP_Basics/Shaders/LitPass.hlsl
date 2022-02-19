@@ -3,6 +3,7 @@
 
 #include "../ShaderLibrary/Common.hlsl"
 #include "../ShaderLibrary/Surface.hlsl"
+#include "../ShaderLibrary/Shadows.hlsl"
 #include "../ShaderLibrary/Light.hlsl"
 #include "../ShaderLibrary/BRDF.hlsl"
 #include "../ShaderLibrary/Lighting.hlsl"
@@ -44,8 +45,8 @@ Veryings LitVertex (Attributes input)
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_TRANSFER_INSTANCE_ID(input, output); // ??????
 
-    output.positionCS = TransformObjectToHClip(input.positionOS);
     output.positionWS = TransformObjectToWorld(input.positionOS);
+    output.positionCS = TransformWorldToHClip(output.positionWS);
     output.normalWS = TransformObjectToWorldNormal(input.normalOS, true); // 推导为啥要右称变换的逆矩阵
     // UnityPerMaterial: 为ConstantBuffer中的元素, 可以理解为当前Shader中Properties中的所有属性
     float4 tilingAndOffset = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _MainTex_ST);
@@ -61,6 +62,7 @@ float4 LitFragment (Veryings input) : SV_TARGET
     float4 baseColor = mainTex * mainColor;
 
     Surface surface;
+    surface.position = input.positionWS;
     surface.normal = normalize(input.normalWS);
     surface.viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
     surface.color = baseColor.rgb;
@@ -77,7 +79,7 @@ float4 LitFragment (Veryings input) : SV_TARGET
     #ifdef _CLIPPING
         clip(surface.alpha - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _ClipValue));
     #endif
-
+    
     return float4(GetLighting(surface, brdf), surface.alpha);
 }
 

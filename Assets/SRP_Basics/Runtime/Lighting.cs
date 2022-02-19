@@ -16,12 +16,14 @@ public class Lighting
     private CullingResults cullingResults;
     // 阴影信息
     private Shadows shadows = new Shadows();
-    // 平行光信息
+    // 平行光属性ID
     private static int dirLightCountId = Shader.PropertyToID("_DirectionalLightCount");
     private static int dirLightColorsId = Shader.PropertyToID("_DirectionalLightColors");
     private static int dirLightDirectionsId = Shader.PropertyToID("_DirectionalLightDirections");
+    private static int dirLightShowDataId = Shader.PropertyToID("_DirectionalLightShadowdatas");
     private static Vector4[] dirLightColors = new Vector4[maxDirLightCount];
     private static Vector4[] dirLightDirections = new Vector4[maxDirLightCount];
+    private static Vector4[] dirLightShadowDatas = new Vector4[maxDirLightCount]; 
     public void Setup(ScriptableRenderContext context, CullingResults cullingResults, ShadowSettings shadowSettings)
     {
         this.cullingResults = cullingResults;
@@ -31,6 +33,7 @@ public class Lighting
         shadows.Setup(context, cullingResults, shadowSettings);
         // 从剔除结果中获取可见光源信息, 并将信息设置到渲染缓存中指定的位置
         SetupLights();
+        // 渲染阴影
         shadows.Render();
         buffer.EndSample(bufferName);
         context.ExecuteCommandBuffer(buffer);
@@ -40,19 +43,22 @@ public class Lighting
     // 通过cullingResults可以获取有哪几盏灯会影响到当前剔除结果内的模型
     private void SetupLights()
     {
+        // 获得可见光源
         NativeArray<VisibleLight> visibleLights = cullingResults.visibleLights;
         int dirLightCount = 0;
         for (int i = 0; i < visibleLights.Length; i++)
         {
+            // 对光源进行筛选及配置
             VisibleLight visibleLight = visibleLights[i];
             if (visibleLight.lightType != LightType.Directional) continue;
             SetupDirectionalLight(dirLightCount++, ref visibleLight);
             if (dirLightCount >= maxDirLightCount) break;
         }
-
+        // 将光源信息发到指定id的buffer内
         buffer.SetGlobalInt(dirLightCountId, visibleLights.Length >= 4 ? 4 : visibleLights.Length);
         buffer.SetGlobalVectorArray(dirLightColorsId, dirLightColors);
         buffer.SetGlobalVectorArray(dirLightDirectionsId, dirLightDirections);
+        buffer.SetGlobalVectorArray(dirLightShowDataId, dirLightShadowDatas);
     }
 
     // 在相机内可见的灯光
@@ -60,7 +66,7 @@ public class Lighting
     {
         dirLightColors[index] = visibleLight.finalColor;
         dirLightDirections[index] = -visibleLight.localToWorldMatrix.GetColumn(2); // 也就是Y轴指向的方向, 1-x, 2-y, 3-z
-        shadows.ReserveDirectionalShadows(visibleLight.light, index);
+        dirLightShadowDatas[index] = shadows.ReserveDirectionalShadows(visibleLight.light, index);
     }
     
     public void Cleanup()
