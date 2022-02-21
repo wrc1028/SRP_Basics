@@ -29,10 +29,14 @@ public class Shadows
         dirShadowAtlasId = Shader.PropertyToID("_DirectionalShadowAtlas"), 
         dirShadowMatricesId = Shader.PropertyToID("_DirectionalShadowMatrices"), 
         cascadeCountId = Shader.PropertyToID("_CascadeCount"),
-        cascadeCullingSpheresId = Shader.PropertyToID("_CascadeCullingSpheres");
+        cascadeCullingSpheresId = Shader.PropertyToID("_CascadeCullingSpheres"),
+        cascadeDataId = Shader.PropertyToID("_CascadeData"),
+        shadowDistanceFadeId = Shader.PropertyToID("_ShadowDistanceFade");
 
     private static Matrix4x4[] dirShadowMatrices = new Matrix4x4[maxShadowedDirectionalLightCount * maxCascades];
-    private static Vector4[] cascadeCullingSpheres = new Vector4[maxCascades];
+    private static Vector4[] 
+        cascadeCullingSpheres = new Vector4[maxCascades],
+        cascadeDatas = new Vector4[maxCascades];
     
     public void Setup(ScriptableRenderContext context, CullingResults cullingResults, ShadowSettings shadowSettings)
     {
@@ -77,7 +81,11 @@ public class Shadows
         // 将能产生阴影的光源的矩阵传送到Buffer里面
         shadowBuffer.SetGlobalInt(cascadeCountId, shadowSettings.directional.cascadeCount);
         shadowBuffer.SetGlobalVectorArray(cascadeCullingSpheresId, cascadeCullingSpheres);
+        shadowBuffer.SetGlobalVectorArray(cascadeDataId, cascadeDatas);
         shadowBuffer.SetGlobalMatrixArray(dirShadowMatricesId, dirShadowMatrices);
+        float f = 1.0f - shadowSettings.directional.cascadeFade;
+        shadowBuffer.SetGlobalVector(shadowDistanceFadeId, 
+            new Vector4(1.0f / shadowSettings.maxDistance, 1.0f / shadowSettings.distanceFade, 1.0f / (1.0f - f * f)));
         shadowBuffer.EndSample(bufferName);
         ExecuteBuffer();
     }
@@ -100,9 +108,7 @@ public class Shadows
             shadowDrawingSettings.splitData = splitData;
             if (index == 0)
             {
-                Vector4 cullingSphere = splitData.cullingSphere;
-                cullingSphere.w *= cullingSphere.w;
-                cascadeCullingSpheres[i] = cullingSphere;
+                SetCascadeData(i, splitData.cullingSphere, tileSize);
             }
             int tileIndex = tileOffset + i;
             dirShadowMatrices[tileIndex] = ConvertToAtlasMatrix(projectionMatrix * viewMatrix, SetTileViewport(tileIndex, split, tileSize), split);
@@ -110,6 +116,12 @@ public class Shadows
             ExecuteBuffer();
             context.DrawShadows(ref shadowDrawingSettings);
         }
+    }
+    private void SetCascadeData(int index, Vector4 cullingSphere, float tileSize)
+    {
+        cascadeDatas[index].x = 1.0f / cullingSphere.w;
+        cullingSphere.w *= cullingSphere.w;
+        cascadeCullingSpheres[index] = cullingSphere;
     }
     // 对多光源产生的ShadowMap进行偏移, 从而合并成一张 4合1
     private Vector2 SetTileViewport(int index, int split, float tileSize)
