@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 // Our camera renderer is roughly equivalent to the scriptable renderers of the Universal RP.
@@ -13,8 +14,8 @@ partial class CameraRenderer
     /// 渲染相机, 以当前这个相机的参数对场景中的物体进行渲染
     /// </summary>
     private Camera camera;
-    // 自定义的渲染Buffer
-    private const string bufferName = "Render Camera !";
+    // 自定义的渲染Buffer名称
+    private const string bufferName = "Render Camera";
     private CommandBuffer buffer = new CommandBuffer()
     {
         name = bufferName,
@@ -30,29 +31,37 @@ partial class CameraRenderer
     // --------------------------------------------------------------------------------------- 
 
     // 绘制相机所能看见的所有几何图形
-    public void Render(ScriptableRenderContext context, Camera camera, bool useDynamicBatching, bool useGPUInstancing)
+    public void Render(ScriptableRenderContext context, Camera camera, bool useDynamicBatching, bool useGPUInstancing, ShadowSettings shadowSettings)
     {
         this.context = context;
         this.camera = camera;
 
         PrepareBuffer();
         PrepareForSceneWindow();
-        if (!Cull()) return;
+        if (!Cull(shadowSettings.maxDistance)) return;
+
+        buffer.BeginSample(SampleName);
+        ExecuteBuffer();
+        lighting.Setup(context, cullingResults, shadowSettings);
+        buffer.EndSample(SampleName);
 
         Step();
-        lighting.Setup(context, cullingResults);
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
+        lighting.Cleanup();
         Submit();
     }
     // 剔除
-    private bool Cull()
+    private bool Cull(float maxShadowDistance)
     {
         ScriptableCullingParameters parameters;
-        // 尝试获得摄像机的剔除所需要的参数，比如相机的位置、近裁面和远裁面、可见层设置等等
+        // 尝试获得当前摄像机剔除所需要的参数，比如相机的位置、近裁面和远裁面、可见层设置等等
         if (camera.TryGetCullingParameters(out parameters))
         {
+            // 根据产生ShadowMap"相机"的参数对场景内的物体进行剔除
+            parameters.shadowDistance = Mathf.Min(maxShadowDistance, camera.farClipPlane);
+            // 根据渲染相机参数进行剔除
             cullingResults = context.Cull(ref parameters);
             return true;
         }
@@ -92,7 +101,7 @@ partial class CameraRenderer
             enableInstancing = useGPUInstancing,
         };
         drawingSettings.SetShaderPassName(1, litShaderTagId);
-        // ?渲染物体筛选: 通过筛选(着色器设置?)对渲染物体进行选择性渲染
+        // ?渲染物体筛选: 通过筛选(着色器设置)对渲染物体进行选择性渲染
         FilteringSettings filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
         // 最后将需要渲染的物体及其参数传给当前的渲染Buffer
         context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
@@ -114,7 +123,7 @@ partial class CameraRenderer
         // 提交渲染
         context.Submit();
     }
-    // 
+    // 执行CommandBuffer中的命令
     private void ExecuteBuffer()
     {
         context.ExecuteCommandBuffer(buffer);

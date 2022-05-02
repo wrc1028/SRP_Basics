@@ -11,6 +11,7 @@ Shader "Custom RP/Unlit"
         [Enum(Off, 0, On, 1)] _ZWrite ("Z Write", float) = 1
 
         [Header(Clip)]
+        [Enum(UnityEngine.Rendering.CullMode)] _CullMode ("Cull Mode", float) = 0
         [Toggle(_CLIPPING)] _Clipping ("Alpha Clipping", float) = 0
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0
     }
@@ -21,6 +22,7 @@ Shader "Custom RP/Unlit"
             
             Blend [_SrcBlend] [_DstBlend]
             ZWrite [_ZWrite]
+            Cull [_CullMode]
 
             HLSLPROGRAM
             #pragma target 3.5

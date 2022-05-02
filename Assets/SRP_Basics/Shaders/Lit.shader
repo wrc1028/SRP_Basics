@@ -27,15 +27,37 @@ Shader "Custom RP/Lit"
             Cull [_Cull]
             // 着色器标签: 可以在渲染的时候指定特定标签(Tag)的Shader进行渲染
             Tags { "LightMode" = "CustomLit" }
+
             HLSLPROGRAM
             #pragma target 3.5
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
+
             #pragma vertex LitVertex
             #pragma fragment LitFragment
+
             #pragma shader_feature _CLIPPING
             #pragma shader_feature _PREMULTIPLY_ALPHA
+
             #include "LitPass.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Tags { "LightMode" = "ShadowCaster" }
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma multi_compile_instancing
+
+            #pragma vertex ShadowCasterVertex
+            #pragma fragment ShadowCasterFragment
+
+            #pragma shader_feature _CLIPPING
+
+            #include "ShadowCasterPass.hlsl"
             ENDHLSL
         }
     }

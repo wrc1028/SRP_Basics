@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 // 将一些不用于最后游戏运行的渲染设置在这里进行处理, 比如一些GUI、Gizmos等等
+// 部分类
 partial class CameraRenderer
 {
     partial void PrepareBuffer();

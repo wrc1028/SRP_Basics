@@ -14,16 +14,20 @@ public class Lighting
         name = bufferName,
     };
     private CullingResults cullingResults;
+    private Shadows shadows = new Shadows();
+
     private static int dirLightCountId = Shader.PropertyToID("_DirectionalLightCount");
     private static int dirLightColorsId = Shader.PropertyToID("_DirectionalLightColors");
     private static int dirLightDirectionsId = Shader.PropertyToID("_DirectionalLightDirections");
     private static Vector4[] dirLightColors = new Vector4[maxDirLightCount];
     private static Vector4[] dirLightDirections = new Vector4[maxDirLightCount];
-    public void Setup(ScriptableRenderContext context, CullingResults cullingResults)
+    public void Setup(ScriptableRenderContext context, CullingResults cullingResults, ShadowSettings shadowSettings)
     {
         this.cullingResults = cullingResults;
         buffer.BeginSample(bufferName);
+        shadows.Setup(context, cullingResults, shadowSettings);
         SetupLights();
+        shadows.Reder();
         buffer.EndSample(bufferName);
         context.ExecuteCommandBuffer(buffer);
         buffer.Clear();
@@ -51,5 +55,11 @@ public class Lighting
     {
         dirLightColors[index] = visibleLight.finalColor;
         dirLightDirections[index] = -visibleLight.localToWorldMatrix.GetColumn(2); // 也就是Y轴指向的方向, 1-x, 2-y, 3-z
+        shadows.ReserveDirectionalShadows(visibleLight.light, index);
+    }
+
+    public void Cleanup()
+    {
+        shadows.Cleanup();
     }
 }
