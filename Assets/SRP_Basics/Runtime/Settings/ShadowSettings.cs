@@ -16,6 +16,12 @@ public enum TextureSize
 public struct Directional
 {
     public TextureSize atlasSize;
+    [Range(1, 4)]
+    public int cascadeCount;
+    [Range(0.0f, 1.0f)]
+    public float cascadeRatio1, cascadeRatio2, cascadeRatio3; 
+    [HideInInspector]
+    public Vector3 CascadeRatios => new Vector3(cascadeRatio1, cascadeRatio2, cascadeRatio3);
 }
 
 [System.Serializable]
@@ -33,5 +39,9 @@ public class ShadowSettings
     public Directional directional = new Directional
     {
         atlasSize = TextureSize._1024, 
+        cascadeCount = 4, 
+        cascadeRatio1 = 0.1f,
+        cascadeRatio2 = 0.25f, 
+        cascadeRatio3 = 0.5f,
     };
 }

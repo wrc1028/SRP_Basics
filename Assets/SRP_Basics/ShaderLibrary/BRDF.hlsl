@@ -20,7 +20,23 @@ float OneMinusReflectivity(float metaiillc)
     float range = 1.0 - MinReflectivity;
     return range - metaiillc * range;
 }
-
+// 五次方
+float Pow5(float value)
+{
+    return value * value * value * value * value;
+}
+float3 DisneyDiffuse(Surface surface, BRDF brdf, Light light)
+{
+    float NdotV = saturate(dot(surface.normal, surface.viewDirection));
+    float NdotL = saturate(dot(surface.normal, light.direction));
+    float3 halfDir = normalize(surface.viewDirection + light.direction);
+    float LdotH = saturate(dot(light.direction, halfDir));
+    float FD90 = 0.5 + 2 * LdotH * LdotH * brdf.roughness;
+    float FdV = 1 + (FD90 - 1) * Pow5(clamp(1 - NdotV, 0, 1));
+    float FdL = 1 + (FD90 - 1) * Pow5(clamp(1 - NdotL, 0, 1));
+    return brdf.diffuse * FdV * FdL;
+    return 0;
+}
 // 平方
 float Square(float value)
 {
@@ -43,7 +59,7 @@ float SpecularStrength(Surface surface, BRDF brdf, Light light)
 
 float3 DirectBRDF(Surface surface, BRDF brdf, Light light)
 {
-    return brdf.diffuse + SpecularStrength(surface, brdf, light) * brdf.specular;
+    return DisneyDiffuse(surface, brdf, light) + SpecularStrength(surface, brdf, light) * brdf.specular;
 }
 
 BRDF GetBRDF(Surface surface, bool applyAlphaToDiffuse = false)
